@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "496069219685",
+    "project_id": "oscaru-f79af",
+    "storage_bucket": "oscaru-f79af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496069219685:android:b4b7357133b2eaef30fd8c",
+        "android_client_info": {
+          "package_name": "com.oscaru.motive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBG-VV1Ee76JYQ5JstotIojDIjKOV8zI9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
