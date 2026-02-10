@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:oscaru95/features/user/home/model/nearest_shop_response.dart';
 import 'package:oscaru95/networks/dio/dio.dart';
 import 'package:oscaru95/networks/endpoints.dart';
@@ -15,16 +16,16 @@ final class GetNearestApi {
 
   Future<NearestShopResponse> getNearest() async {
     try {
-      Response response = await getHttp(EndPoints.getNearest());
-      if (response.statusCode == 200) {
-        final data =
-            NearestShopResponse.fromRawJson(json.encode(response.data));
-        return data;
-      } else {
-        log('Error: ${response.statusCode}');
-        throw DataSource.DEFAULT.getFailure();
-      }
+      // Load the local JSON file
+      final String jsonString =
+          await rootBundle.loadString('assets/data/nearest_shops.json');
+      final dynamic jsonData = json.decode(jsonString);
+      
+      // Parse the JSON to NearestShopResponse
+      final data = NearestShopResponse.fromJson(jsonData);
+      return data;
     } catch (e) {
+      log('Error loading local data: $e');
       rethrow;
     }
   }

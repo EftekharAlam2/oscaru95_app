@@ -54,7 +54,7 @@ class Datum {
     String? address;
     String? latitude;
     String? longitude;
-    int? totalReviews;
+    int? totalReview;
     int? averageRating;
     dynamic category;
     String? isItem;
@@ -62,6 +62,8 @@ class Datum {
     dynamic toDay;
     dynamic fromTime;
     dynamic toTime;
+    String? distance;
+    String? type;
 
     Datum({
         this.id,
@@ -72,7 +74,7 @@ class Datum {
         this.address,
         this.latitude,
         this.longitude,
-        this.totalReviews,
+        this.totalReview,
         this.averageRating,
         this.category,
         this.isItem,
@@ -80,6 +82,8 @@ class Datum {
         this.toDay,
         this.fromTime,
         this.toTime,
+        this.distance,
+        this.type,
     });
 
     Datum copyWith({
@@ -91,7 +95,7 @@ class Datum {
         String? address,
         String? latitude,
         String? longitude,
-        int? totalReviews,
+        int? totalReview,
         int? averageRating,
         dynamic category,
         String? isItem,
@@ -99,7 +103,9 @@ class Datum {
         dynamic toDay,
         dynamic fromTime,
         dynamic toTime,
-    }) => 
+        String? distance,
+        String? type,
+    }) =>
         Datum(
             id: id ?? this.id,
             isFavourite: isFavourite ?? this.isFavourite,
@@ -109,7 +115,7 @@ class Datum {
             address: address ?? this.address,
             latitude: latitude ?? this.latitude,
             longitude: longitude ?? this.longitude,
-            totalReviews: totalReviews ?? this.totalReviews,
+            totalReview: totalReview ?? this.totalReview,
             averageRating: averageRating ?? this.averageRating,
             category: category ?? this.category,
             isItem: isItem ?? this.isItem,
@@ -117,6 +123,8 @@ class Datum {
             toDay: toDay ?? this.toDay,
             fromTime: fromTime ?? this.fromTime,
             toTime: toTime ?? this.toTime,
+            distance: distance ?? this.distance,
+            type: type ?? this.type,
         );
 
     factory Datum.fromRawJson(String str) => Datum.fromJson(json.decode(str));
@@ -132,7 +140,7 @@ class Datum {
         address: json["address"],
         latitude: json["latitude"],
         longitude: json["longitude"],
-        totalReviews: json["total_reviews"],
+        totalReview: json["total_review"],
         averageRating: json["average_rating"],
         category: json["category"],
         isItem: json["is_item"],
@@ -140,6 +148,8 @@ class Datum {
         toDay: json["to_day"],
         fromTime: json["from_time"],
         toTime: json["to_time"],
+        distance: json["distance"],
+        type: json["type"],
     );
 
     Map<String, dynamic> toJson() => {
@@ -151,7 +161,7 @@ class Datum {
         "address": address,
         "latitude": latitude,
         "longitude": longitude,
-        "total_reviews": totalReviews,
+        "total_review": totalReview,
         "average_rating": averageRating,
         "category": category,
         "is_item": isItem,
@@ -159,5 +169,7 @@ class Datum {
         "to_day": toDay,
         "from_time": fromTime,
         "to_time": toTime,
+        "distance": distance,
+        "type": type,
     };
 }

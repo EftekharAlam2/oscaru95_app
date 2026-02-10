@@ -1,10 +1,4 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
-
-import '/networks/endpoints.dart';
-import '../../../../../../networks/dio/dio.dart';
-import '../../../../../../networks/exception_handler/data_source.dart';
+import 'package:oscaru95/features/user/favourite/data/rx_get_favourite/api.dart';
 
 final class AddFavouriteApi {
   static final AddFavouriteApi _singleton = AddFavouriteApi._internal();
@@ -13,18 +7,16 @@ final class AddFavouriteApi {
 
   Future<Map> addToFavourite({required String id}) async {
     try {
-      Map data = {
-        "business_profile_id": id,
+      // Toggle favorite in local memory instead of API call
+      final favApi = GetFavouriteApi.instance;
+      favApi.toggleFavorite(id);
+      
+      // Return success response
+      return {
+        "success": true,
+        "message": "Favorite updated successfully",
+        "code": 200
       };
-
-      Response response = await postHttp(EndPoints.addToFavourite(), data);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(json.encode(response.data));
-        return data;
-      } else {
-        throw DataSource.DEFAULT.getFailure();
-      }
     } catch (error) {
       rethrow;
     }

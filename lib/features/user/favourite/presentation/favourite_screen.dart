@@ -48,27 +48,35 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
             } else if (snapshot.hasData) {
               FavouriteResponse response = snapshot.data;
 
-              return SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomFormField(
-                      contentPadding: const EdgeInsets.all(0),
-                      hintText: "Search",
-                      controller: _searchCnt,
-                      prefixIcon: Icon(
-                        CupertinoIcons.search,
-                        color: AppColors.cFE5401,
-                        size: 18.sp,
-                      ),
-                      textInputAction: TextInputAction.search,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomFormField(
+                          contentPadding: const EdgeInsets.all(0),
+                          hintText: "Search",
+                          controller: _searchCnt,
+                          prefixIcon: Icon(
+                            CupertinoIcons.search,
+                            color: AppColors.cFE5401,
+                            size: 18.sp,
+                          ),
+                          textInputAction: TextInputAction.search,
+                        ),
+                        UIHelper.verticalSpace(16.h),
+                        Text("Only you can see what you’ve saved",
+                            style: TextFontStyle.headline12w400c6B6B6BPoppins),
+                        UIHelper.verticalSpace(16.h),
+                      ],
                     ),
-                    UIHelper.verticalSpace(16.h),
-                    Text("Only you can see what you’ve saved",
-                        style: TextFontStyle.headline12w400c6B6B6BPoppins),
-                    UIHelper.verticalSpace(16.h),
-                    response.data!.isEmpty
+                  ),
+                  Expanded(
+                    child: response.data!.isEmpty
                         ? Center(
                             child: Text(
                               "No data found",
@@ -76,9 +84,8 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                             ),
                           )
                         : ListView.separated(
-                            shrinkWrap: true,
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
                             itemCount: response.data!.length,
-                            physics: const NeverScrollableScrollPhysics(),
                             separatorBuilder: (context, index) {
                               return UIHelper.verticalSpaceSmall;
                             },
@@ -87,23 +94,26 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                               return HomeListTileWidget(
                                 id: data.id.toString(),
                                 name: data.venueName,
-                                // locationAddress: 'Wimbledom',
-                                img: Assets.images.restaurentDiscover.path,
-                                // distance: '(2km)',
-                                isFav: isFav,
+                                locationAddress: data.address,
+                                img: data.cover,
+                                distance: data.distance,
+                                ratting: data.averageRating.toString(),
+                                totalReview: data.totalReview.toString(),
+                                resturentType: data.type,
+                                isFav: true,
                                 onFavTap: () {
-                                  setState(() {
-                                    isFav = !isFav;
-                                  });
+                                  // Remove from favorites
+                                  addFavouriteRx.addToFavourite(
+                                      id: data.id.toString());
                                 },
                               );
-                            }),
-                  ],
-                ),
+                            },
+                          ),
+                  ),
+                ],
               );
-            } else {
-              return const SizedBox.shrink();
             }
+            return const Center(child: Text("No data"));
           }),
     );
   }

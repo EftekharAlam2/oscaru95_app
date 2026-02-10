@@ -45,9 +45,20 @@ class HomeListTileWidget extends StatefulWidget {
 }
 
 class _HomeListTileWidgetState extends State<HomeListTileWidget> {
+  late bool _isFav;
+
   @override
   void initState() {
     super.initState();
+    _isFav = widget.isFav;
+  }
+
+  void _toggleFavorite() {
+    setState(() {
+      _isFav = !_isFav;
+    });
+    // Call the callback to update the backend
+    widget.onFavTap?.call();
   }
 
   @override
@@ -62,7 +73,7 @@ class _HomeListTileWidgetState extends State<HomeListTileWidget> {
           "title": widget.name??"",
           "type": widget.resturentType??"",
           "location": widget.locationAddress??"",
-          "isWishlisted":widget.isFav,
+          "isWishlisted": _isFav,
           "distance":widget.distance
         });
       },
@@ -100,10 +111,10 @@ class _HomeListTileWidgetState extends State<HomeListTileWidget> {
                   right: 10.w,
                   // right: -180.w,
                   child: InkWell(
-                    onTap: widget.onFavTap,
+                    onTap: _toggleFavorite,
                     child: CircleAvatar(
                       backgroundColor: AppColors.cFFFFFF,
-                      child: widget.isFav
+                      child: _isFav
                           ? SvgPicture.asset(
                               Assets.icons.heartBoldIcon,
                               height: 24.h,

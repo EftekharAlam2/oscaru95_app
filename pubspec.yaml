@@ -83,3 +83,4 @@ flutter:
     - assets/icons/
     - assets/lottie/
     - assets/darkthem/darkthem.json
+    - assets/data/

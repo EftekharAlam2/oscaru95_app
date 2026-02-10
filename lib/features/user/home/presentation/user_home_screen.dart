@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -133,6 +135,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     final defaultMarker = _resturent ?? BitmapDescriptor.defaultMarker; 
 
     for (var shop in response.data!.data!) {
+
       if (shop.latitude != null && shop.longitude != null) {
         final lat = double.tryParse(shop.latitude!);
         final lng = double.tryParse(shop.longitude!);
@@ -328,7 +331,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                             child: HomeListTileWidget(
                               id: model.id.toString(),
                               img: model.cover,
-                              isFav: response.data!.data[index].isWishlisted,
+                              isFav: getFavouriteRx.api.isFavorited(model.id.toString()),
                               locationAddress: model.address,
                               distance: model.distance.toString(),
                               ratting: model.averageRating.toString(),
@@ -337,9 +340,8 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                               name: model.venueName,
                               
                               onFavTap: () {
-                                setState(() {
-                                 
-                                });
+                                // Call API to add to favorites
+                                addFavouriteRx.addToFavourite(id: model.id.toString());
                               },
                             ),
                           );

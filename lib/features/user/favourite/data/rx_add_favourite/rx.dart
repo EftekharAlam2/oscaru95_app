@@ -5,6 +5,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:oscaru95/constants/app_constants.dart';
 import 'package:oscaru95/features/user/favourite/data/rx_add_favourite/api.dart';
+import 'package:oscaru95/features/user/favourite/data/rx_get_favourite/rx.dart';
 import 'package:oscaru95/helpers/all_routes.dart';
 import 'package:oscaru95/helpers/di.dart';
 import 'package:oscaru95/helpers/navigation_service.dart';
@@ -12,6 +13,7 @@ import 'package:oscaru95/networks/stream_cleaner.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../../../../../../networks/rx_base.dart';
+import '../../../../../networks/api_access.dart';
 
 final class AddFavouriteRx extends RxResponseInt<Map> {
   String? errorMessage;
@@ -25,6 +27,8 @@ final class AddFavouriteRx extends RxResponseInt<Map> {
     try {
       final data = await api.addToFavourite(id: id);
       handleSuccessWithReturn(data);
+      // Refresh the favorite list after toggling
+      await getFavouriteRx.getFavourite();
       return true;
     } catch (error) {
       return handleErrorWithReturn(error);

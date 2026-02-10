@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:oscaru95/features/user/home/model/discover_response.dart';
 import 'package:oscaru95/networks/dio/dio.dart';
 import 'package:oscaru95/networks/endpoints.dart';
@@ -15,15 +16,21 @@ final class GetDiscoverApi {
 
   Future<DiscoverResponse> getDiscover() async {
     try {
-      Response response = await getHttp(EndPoints.getDiscover());
-      if (response.statusCode == 200) {
-        final data = DiscoverResponse.fromRawJson(json.encode(response.data));
-        return data;
-      } else {
-        log('Error: ${response.statusCode}');
-        throw DataSource.DEFAULT.getFailure();
-      }
+      // Load from local JSON data
+      final String jsonString =
+          await rootBundle.loadString('assets/data/nearest_shops.json');
+      final dynamic jsonData = json.decode(jsonString);
+      
+      // Use the shops data for discover
+      final data = DiscoverResponse.fromJson({
+        'success': true,
+        'message': 'Discover data retrieved successfully',
+        'data': jsonData['data']['data'],
+        'code': 200
+      });
+      return data;
     } catch (e) {
+      log('Error loading discover data: $e');
       rethrow;
     }
   }

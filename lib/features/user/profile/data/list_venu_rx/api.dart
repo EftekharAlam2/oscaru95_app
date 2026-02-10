@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:oscaru95/features/user/profile/model/list_of_model.dart';
 import 'package:oscaru95/networks/dio/dio.dart';
 import 'package:oscaru95/networks/endpoints.dart';
@@ -15,15 +16,31 @@ final class FoodListApi {
 
   Future<FoodListModel> getList(String id) async {
     try {
-      Response response = await getHttp(EndPoints.homeShopProfile(id));
-      if (response.statusCode == 200) {
-        final data = FoodListModel.fromRawJson(json.encode(response.data));
+      // Load from local JSON data
+      final String jsonString =
+          await rootBundle.loadString('assets/data/nearest_shops.json');
+      final dynamic jsonData = json.decode(jsonString);
+      
+      // Find the shop with matching id
+      final shopsList = jsonData['data']['data'] as List;
+      final shop = shopsList.firstWhere(
+        (item) => item['id'].toString() == id,
+        orElse: () => shopsList.isNotEmpty ? shopsList[0] : null,
+      );
+      
+      if (shop != null) {
+        final data = FoodListModel.fromJson({
+          'success': true,
+          'message': 'Shop profile retrieved successfully',
+          'data': shop,
+          'code': 200
+        });
         return data;
       } else {
-        log('Error: ${response.statusCode}');
         throw DataSource.DEFAULT.getFailure();
       }
     } catch (e) {
+      log('Error loading shop data: $e');
       rethrow;
     }
   }
