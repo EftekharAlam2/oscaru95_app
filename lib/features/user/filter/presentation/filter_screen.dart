@@ -20,6 +20,7 @@ import 'package:oscaru95/helpers/ui_helpers.dart';
 import 'package:oscaru95/networks/api_access.dart';
 import 'package:oscaru95/provider/discover_provider.dart';
 import 'package:oscaru95/provider/filter_provider.dart';
+import 'package:oscaru95/services/venue_storage_service.dart';
 import 'package:provider/provider.dart';
 
 class FilterScreen extends StatefulWidget {
@@ -57,7 +58,16 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Future<void> _loadAvailableTypesFromJson() async {
     try {
-      final String jsonString = await rootBundle.loadString('assets/data/nearest_shops.json');
+      // Try to load from storage first
+      final storageService = VenueStorageService();
+      String? jsonString = storageService.getStoredVenueData();
+      
+      // Fallback to loading from assets if not in storage
+      if (jsonString == null) {
+        log('Venue data not found in storage, loading from assets...');
+        jsonString = await rootBundle.loadString('assets/data/nearest_shops.json');
+      }
+      
       final dynamic jsonData = json.decode(jsonString);
       List<dynamic> allShops = jsonData['data']['data'] as List? ?? [];
       final types = allShops.map((e) => (e['type'] ?? '').toString()).where((t) => t.isNotEmpty).toSet().toList();

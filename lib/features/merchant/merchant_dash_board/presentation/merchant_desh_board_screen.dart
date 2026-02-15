@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
 import 'package:oscaru95/networks/api_access.dart';
 import 'package:oscaru95/provider/user_home_provider.dart';
+import 'package:oscaru95/services/venue_storage_service.dart';
 import 'package:provider/provider.dart';
 
 class MerchantDeshBoardScreen extends StatefulWidget {
@@ -182,8 +184,17 @@ class _MerchantDeshBoardScreenState extends State<MerchantDeshBoardScreen>
 
   Future<void> _loadNearestShopsFromJson() async {
     try {
-      final jsonString = await DefaultAssetBundle.of(context)
-          .loadString('assets/data/nearest_shops.json');
+      // Try to load from storage first
+      final storageService = VenueStorageService();
+      String? jsonString = storageService.getStoredVenueData();
+      
+      // Fallback to loading from assets if not in storage
+      if (jsonString == null) {
+        log('Venue data not found in storage, loading from assets...');
+        jsonString = await DefaultAssetBundle.of(context)
+            .loadString('assets/data/nearest_shops.json');
+      }
+      
       final jsonResponse = jsonDecode(jsonString);
       final response = NearestShopResponse.fromJson(jsonResponse);
 

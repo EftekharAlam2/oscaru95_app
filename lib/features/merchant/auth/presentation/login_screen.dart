@@ -13,6 +13,7 @@ import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
 import 'package:oscaru95/networks/api_access.dart';
 import 'package:oscaru95/provider/auth_provider.dart';
+import 'package:oscaru95/services/venue_storage_service.dart';
 import 'package:provider/provider.dart';
 
 class LoginMerchantScreen extends StatefulWidget {
@@ -156,10 +157,19 @@ class _LoginMerchantScreenState extends State<LoginMerchantScreen> {
                             email: _emailController.text.trim(),
                             password: _passwordController.text.trim())
                         .waitingForSucess()
-                        .then((success) {
+                        .then((success) async {
                       if (success) {
                         // Store account type as "business"
                         appData.write(kKeyAccountType, "business");
+                        
+                        // Load and store venue data after successful login
+                        try {
+                          await VenueStorageService().loadAndStoreVenueData();
+                        } catch (e) {
+                          // Log error but don't block navigation
+                          // Data will be loaded from assets if storage fails
+                        }
+                        
                         NavigationService.navigateToReplacement(
                             Routes.merchantNavigation);
                       }

@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:oscaru95/features/user/favourite/model/favourite_response.dart';
+import 'package:oscaru95/services/venue_storage_service.dart';
 
 final class GetFavouriteApi {
   static final GetFavouriteApi _singleton = GetFavouriteApi._internal();
@@ -44,9 +45,18 @@ final class GetFavouriteApi {
 
   Future<FavouriteResponse> getFavourite() async {
     try {
-      // Load from local JSON data
-      final String jsonString =
-          await rootBundle.loadString('assets/data/nearest_shops.json');
+      // Try to load from storage first
+      final storageService = VenueStorageService();
+      String? jsonString = storageService.getStoredVenueData();
+      
+      // Fallback to loading from assets if not in storage
+      if (jsonString == null) {
+        log('Venue data not found in storage, loading from assets...');
+        jsonString = await rootBundle.loadString('assets/data/nearest_shops.json');
+      } else {
+        log('Loading venue data from storage');
+      }
+      
       final dynamic jsonData = json.decode(jsonString);
       
       // If no favorites have been tracked yet, initialize from JSON is_wishlisted
