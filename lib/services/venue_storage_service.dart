@@ -94,4 +94,108 @@ class VenueStorageService {
       return null;
     }
   }
+
+  /// Add a new venue to storage
+  Future<bool> addVenue(Map<String, dynamic> venue) async {
+    try {
+      final jsonData = getStoredVenueDataAsJson();
+      if (jsonData == null) {
+        log('No venue data in storage to add to');
+        return false;
+      }
+
+      final shopsList = jsonData['data']?['data'] as List?;
+      if (shopsList == null) return false;
+
+      // Add the new venue
+      shopsList.add(venue);
+
+      // Save back to storage
+      await _storage.write(_storageKey, json.encode(jsonData));
+      log('Venue added successfully to storage');
+      return true;
+    } catch (e) {
+      log('Error adding venue: $e');
+      return false;
+    }
+  }
+
+  /// Update an existing venue in storage
+  Future<bool> updateVenue(String id, Map<String, dynamic> updatedData) async {
+    try {
+      final jsonData = getStoredVenueDataAsJson();
+      if (jsonData == null) {
+        log('No venue data in storage to update');
+        return false;
+      }
+
+      final shopsList = jsonData['data']?['data'] as List?;
+      if (shopsList == null) return false;
+
+      // Find and update the venue
+      final index = shopsList.indexWhere((item) => item['id'].toString() == id);
+      if (index == -1) {
+        log('Venue with ID $id not found');
+        return false;
+      }
+
+      // Merge existing data with updates
+      shopsList[index] = {...shopsList[index], ...updatedData};
+
+      // Save back to storage
+      await _storage.write(_storageKey, json.encode(jsonData));
+      log('Venue updated successfully in storage');
+      return true;
+    } catch (e) {
+      log('Error updating venue: $e');
+      return false;
+    }
+  }
+
+  /// Delete a venue from storage
+  Future<bool> deleteVenue(String id) async {
+    try {
+      final jsonData = getStoredVenueDataAsJson();
+      if (jsonData == null) {
+        log('No venue data in storage to delete from');
+        return false;
+      }
+
+      final shopsList = jsonData['data']?['data'] as List?;
+      if (shopsList == null) return false;
+
+      // Remove the venue
+      shopsList.removeWhere((item) => item['id'].toString() == id);
+
+      // Save back to storage
+      await _storage.write(_storageKey, json.encode(jsonData));
+      log('Venue deleted successfully from storage');
+      return true;
+    } catch (e) {
+      log('Error deleting venue: $e');
+      return false;
+    }
+  }
+
+  /// Get all venue types from storage
+  List<String> getVenueTypes() {
+    try {
+      final jsonData = getStoredVenueDataAsJson();
+      if (jsonData == null) return ['Restaurant', 'Bar', 'Cafe', 'Pub'];
+
+      final shopsList = jsonData['data']?['data'] as List?;
+      if (shopsList == null) return ['Restaurant', 'Bar', 'Cafe', 'Pub'];
+
+      final types = shopsList
+          .map((shop) => shop['type']?.toString() ?? '')
+          .where((type) => type.isNotEmpty)
+          .toSet()
+          .toList();
+
+      return types.isEmpty ? ['Restaurant', 'Bar', 'Cafe', 'Pub'] : types;
+    } catch (e) {
+      log('Error getting venue types: $e');
+      return ['Restaurant', 'Bar', 'Cafe', 'Pub'];
+    }
+  }
 }

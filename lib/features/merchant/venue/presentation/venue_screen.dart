@@ -13,6 +13,7 @@ import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
 import 'package:oscaru95/networks/api_access.dart';
 import 'package:oscaru95/provider/discover_provider.dart';
+import 'package:oscaru95/services/venue_storage_service.dart';
 import 'package:provider/provider.dart';
 import 'package:readmore/readmore.dart';
 
@@ -52,22 +53,29 @@ class _VenueScreenState extends State<VenueScreen> {
   /// Delete shop and add to deleted list
   Future<void> _removeShopFromJson(String shopId) async {
     try {
-      // Add to deleted set
-      setState(() {
-        _deletedVenueIds.add(shopId);
-      });
+      // Delete from storage
+      final storageService = VenueStorageService();
+      final success = await storageService.deleteVenue(shopId);
 
-      // Reload the discover data to refresh the list
-      await disoverFilterRxObj.getFilter();
+      if (success) {
+        setState(() {
+          _deletedVenueIds.add(shopId);
+        });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Venue removed successfully'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Reload the discover data to refresh the list
+        await disoverFilterRxObj.getFilter();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Venue removed successfully'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to delete venue from storage');
       }
     } catch (e) {
       debugPrint('Error removing venue: $e');
@@ -93,9 +101,19 @@ class _VenueScreenState extends State<VenueScreen> {
     String openHour,
     String closeHour,
   ) {
+    final storageService = VenueStorageService();
+    final venueTypes = storageService.getVenueTypes();
+    
+    // Get existing venue data to extract latitude/longitude
+    final existingVenue = storageService.getShopById(venueId);
+    final existingLat = existingVenue?['latitude']?.toString() ?? '';
+    final existingLng = existingVenue?['longitude']?.toString() ?? '';
+    
     final nameController = TextEditingController(text: venueName);
     final locationController = TextEditingController(text: location);
-    final typeController = TextEditingController(text: type);
+    final latitudeController = TextEditingController(text: existingLat);
+    final longitudeController = TextEditingController(text: existingLng);
+    String selectedType = type;
     final openHourController = TextEditingController(text: openHour);
     final closeHourController = TextEditingController(text: closeHour);
     final ratingController = TextEditingController();
@@ -103,7 +121,8 @@ class _VenueScreenState extends State<VenueScreen> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
         backgroundColor: AppColors.c282828,
         title: Text(
           'Edit Venue',
@@ -138,12 +157,50 @@ class _VenueScreenState extends State<VenueScreen> {
                 ),
               ),
               UIHelper.verticalSpace(12.h),
-              // Type
-              TextField(
-                controller: typeController,
+              // Type Dropdown
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                dropdownColor: AppColors.c282828,
                 style: TextFontStyle.headline14w400CFFFFFFPoppins,
                 decoration: InputDecoration(
-                  labelText: 'Type (Restaurant/Bar/etc)',
+                  labelText: 'Type',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                ),
+                items: venueTypes.map((String typeValue) {
+                  return DropdownMenuItem<String>(
+                    value: typeValue,
+                    child: Text(typeValue),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      selectedType = newValue;
+                    });
+                  }
+                },
+              ),
+              UIHelper.verticalSpace(12.h),
+              // Location Name
+              TextField(
+                controller: locationController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                decoration: InputDecoration(
+                  labelText: 'Location Name/Address',
                   labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
                   hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
                   filled: true,
@@ -163,40 +220,54 @@ class _VenueScreenState extends State<VenueScreen> {
                 ),
               ),
               UIHelper.verticalSpace(12.h),
-              // Location/Address with Map Button
-              GestureDetector(
-                onTap: () {
-                  // TODO: Open map picker here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Map picker coming soon'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-                child: TextField(
-                  controller: locationController,
-                  enabled: false,
-                  style: TextFontStyle.headline14w400CFFFFFFPoppins,
-                  decoration: InputDecoration(
-                    labelText: 'Location/Address (Tap to pick)',
-                    labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
-                    hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
-                    filled: true,
-                    fillColor: AppColors.c282828,
-                    suffixIcon: Icon(Icons.location_on, color: Color(0xFFFE5401)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                      borderSide: const BorderSide(color: AppColors.c535353),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                      borderSide: const BorderSide(color: AppColors.c535353),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                      borderSide: const BorderSide(color: Color(0xFFFE5401)),
-                    ),
+              // Latitude
+              TextField(
+                controller: latitudeController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                decoration: InputDecoration(
+                  labelText: 'Latitude',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                ),
+              ),
+              UIHelper.verticalSpace(12.h),
+              // Longitude
+              TextField(
+                controller: longitudeController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                decoration: InputDecoration(
+                  labelText: 'Longitude',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
                   ),
                 ),
               ),
@@ -346,7 +417,9 @@ class _VenueScreenState extends State<VenueScreen> {
                 venueId,
                 nameController.text,
                 locationController.text,
-                typeController.text,
+                selectedType,
+                latitudeController.text,
+                longitudeController.text,
                 openHourController.text,
                 closeHourController.text,
                 ratingController.text,
@@ -361,39 +434,85 @@ class _VenueScreenState extends State<VenueScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
   /// Save edited venue
-  void _saveEditedVenue(
+  Future<void> _saveEditedVenue(
     String venueId,
     String newName,
     String newLocation,
     String newType,
+    String newLatitude,
+    String newLongitude,
     String newOpenHour,
     String newCloseHour,
     String newRating,
     String newDistance,
-  ) {
-    setState(() {
-      _editedVenues[venueId] = {
-        'name': newName,
-        'location': newLocation,
-        'type': newType,
-        'open_hour': newOpenHour,
-        'close_hour': newCloseHour,
-        'rating': newRating,
-        'distance': newDistance,
-      };
-    });
+  ) async {
+    try {
+      final storageService = VenueStorageService();
+      
+      // Prepare updated data
+      final updatedData = <String, dynamic>{};
+      if (newName.isNotEmpty) updatedData['venue_name'] = newName;
+      if (newLocation.isNotEmpty) updatedData['address'] = newLocation;
+      if (newType.isNotEmpty) updatedData['type'] = newType;
+      if (newLatitude.isNotEmpty) updatedData['latitude'] = newLatitude;
+      if (newLongitude.isNotEmpty) updatedData['longitude'] = newLongitude;
+      if (newOpenHour.isNotEmpty) updatedData['open_hour'] = newOpenHour;
+      if (newCloseHour.isNotEmpty) updatedData['close_hour'] = newCloseHour;
+      if (newRating.isNotEmpty) {
+        updatedData['average_rating'] = int.tryParse(newRating) ?? 0;
+      }
+      if (newDistance.isNotEmpty) updatedData['distance'] = '$newDistance km';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Venue updated successfully'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.green,
-      ),
-    );
+      // Update in storage
+      final success = await storageService.updateVenue(venueId, updatedData);
+
+      if (success) {
+        setState(() {
+          _editedVenues[venueId] = {
+            'name': newName,
+            'location': newLocation,
+            'type': newType,
+            'latitude': newLatitude,
+            'longitude': newLongitude,
+            'open_hour': newOpenHour,
+            'close_hour': newCloseHour,
+            'rating': newRating,
+            'distance': newDistance,
+          };
+        });
+
+        // Reload data
+        await disoverFilterRxObj.getFilter();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Venue updated successfully'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to update venue in storage');
+      }
+    } catch (e) {
+      debugPrint('Error updating venue: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error updating venue'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// Get edited venue name
@@ -647,9 +766,13 @@ class _VenueScreenState extends State<VenueScreen> {
 
   /// Show add venue dialog
   void _showAddVenueDialog(BuildContext context) {
+    final storageService = VenueStorageService();
+    final venueTypes = storageService.getVenueTypes();
+    String selectedType = venueTypes.isNotEmpty ? venueTypes[0] : 'Restaurant';
+    
     final nameController = TextEditingController();
-    final typeController = TextEditingController();
     final locationController = TextEditingController();
+    final imageLinkController = TextEditingController();
     final openHourController = TextEditingController();
     final closeHourController = TextEditingController();
     final latitudeController = TextEditingController();
@@ -659,7 +782,8 @@ class _VenueScreenState extends State<VenueScreen> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
         backgroundColor: AppColors.c282828,
         title: Text(
           'Add New Venue',
@@ -693,12 +817,50 @@ class _VenueScreenState extends State<VenueScreen> {
                 ),
               ),
               UIHelper.verticalSpace(12.h),
-              // Type
-              TextField(
-                controller: typeController,
+              // Type Dropdown
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                dropdownColor: AppColors.c282828,
                 style: TextFontStyle.headline14w400CFFFFFFPoppins,
                 decoration: InputDecoration(
-                  labelText: 'Type (Restaurant/Bar) *',
+                  labelText: 'Type *',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                ),
+                items: venueTypes.map((String typeValue) {
+                  return DropdownMenuItem<String>(
+                    value: typeValue,
+                    child: Text(typeValue),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      selectedType = newValue;
+                    });
+                  }
+                },
+              ),
+              UIHelper.verticalSpace(12.h),
+              // Location Name
+              TextField(
+                controller: locationController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                decoration: InputDecoration(
+                  labelText: 'Location Name/Address *',
                   labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
                   filled: true,
                   fillColor: AppColors.c282828,
@@ -717,35 +879,79 @@ class _VenueScreenState extends State<VenueScreen> {
                 ),
               ),
               UIHelper.verticalSpace(12.h),
-              // Location/Address with Map Picker
-              GestureDetector(
-                onTap: () {
-                  // TODO: Implement map picker
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Map picker coming soon'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-                child: TextField(
-                  controller: locationController,
-                  enabled: false,
-                  style: TextFontStyle.headline14w400CFFFFFFPoppins,
-                  decoration: InputDecoration(
-                    labelText: 'Location/Address (Tap to pick) *',
-                    labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
-                    filled: true,
-                    fillColor: AppColors.c282828,
-                    suffixIcon: Icon(Icons.location_on, color: Color(0xFFFE5401)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                      borderSide: const BorderSide(color: AppColors.c535353),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                      borderSide: const BorderSide(color: AppColors.c535353),
-                    ),
+              // Latitude
+              TextField(
+                controller: latitudeController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                decoration: InputDecoration(
+                  labelText: 'Latitude *',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                ),
+              ),
+              UIHelper.verticalSpace(12.h),
+              // Longitude
+              TextField(
+                controller: longitudeController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                decoration: InputDecoration(
+                  labelText: 'Longitude *',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                ),
+              ),
+              UIHelper.verticalSpace(12.h),
+              // Image Link
+              TextField(
+                controller: imageLinkController,
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                  labelText: 'Image URL',
+                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
+                  hintText: 'https://example.com/image.jpg',
+                  hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
                   ),
                 ),
               ),
@@ -929,7 +1135,7 @@ class _VenueScreenState extends State<VenueScreen> {
           TextButton(
             onPressed: () {
               if (nameController.text.isEmpty ||
-                  typeController.text.isEmpty ||
+                  selectedType.isEmpty ||
                   locationController.text.isEmpty ||
                   openHourController.text.isEmpty ||
                   closeHourController.text.isEmpty ||
@@ -950,8 +1156,9 @@ class _VenueScreenState extends State<VenueScreen> {
               Navigator.of(dialogContext).pop();
               _saveAddedVenue(
                 nameController.text,
-                typeController.text,
+                selectedType,
                 locationController.text,
+                imageLinkController.text,
                 openHourController.text,
                 closeHourController.text,
                 latitudeController.text,
@@ -968,48 +1175,82 @@ class _VenueScreenState extends State<VenueScreen> {
           ),
         ],
       ),
+      ),
     );
-  }
 
   /// Save added venue
-  void _saveAddedVenue(
+  Future<void> _saveAddedVenue(
     String name,
     String type,
     String location,
+    String imageLink,
     String openHour,
     String closeHour,
     String latitude,
     String longitude,
     String rating,
     String distance,
-  ) {
-    final newVenue = {
-      'id': DateTime.now().millisecondsSinceEpoch,
-      'venue_name': name,
-      'type': type,
-      'address': location,
-      'open_hour': openHour,
-      'close_hour': closeHour,
-      'latitude': latitude,
-      'longitude': longitude,
-      'cover': 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=400&fit=crop',
-      'distance': '$distance km',
-      'average_rating': double.tryParse(rating) ?? 0,
-      'total_review': 0,
-      'is_wishlisted': false,
-    };
+  ) async {
+    try {
+      final storageService = VenueStorageService();
+      
+      // Use provided image link or fallback to default
+      final coverImage = imageLink.isNotEmpty 
+          ? imageLink 
+          : 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=400&fit=crop';
+      
+      final newVenue = {
+        'id': DateTime.now().millisecondsSinceEpoch,
+        'venue_name': name,
+        'type': type,
+        'address': location,
+        'open_hour': openHour,
+        'close_hour': closeHour,
+        'latitude': latitude,
+        'longitude': longitude,
+        'cover': coverImage,
+        'distance': '$distance km',
+        'average_rating': int.tryParse(rating) ?? 0,
+        'total_review': 0,
+        'is_wishlisted': false,
+        'date': DateTime.now().toString().substring(0, 10),
+      };
 
-    setState(() {
-      _addedVenues.add(newVenue);
-    });
+      // Add to storage
+      final success = await storageService.addVenue(newVenue);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Venue added successfully'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.green,
-      ),
-    );
+      if (success) {
+        setState(() {
+          _addedVenues.add(newVenue);
+        });
+
+        // Reload data
+        await disoverFilterRxObj.getFilter();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Venue added successfully'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to add venue to storage');
+      }
+    } catch (e) {
+      debugPrint('Error adding venue: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error adding venue'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 
