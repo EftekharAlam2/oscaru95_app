@@ -36,7 +36,7 @@ void main() async {
       await FlutterDisplayMode.setHighRefreshRate();
       log('High refresh rate mode set successfully.');
     } catch (e) {
-      log('Error setting high refresh rate: $e');
+      log('Error setting high refresh rate at main: $e');
     }
   }
 
