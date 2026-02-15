@@ -20,7 +20,7 @@ final class GetDiscoverApi {
       final String jsonString =
           await rootBundle.loadString('assets/data/nearest_shops.json');
       final dynamic jsonData = json.decode(jsonString);
-      
+
       // Use the shops data for discover
       final data = DiscoverResponse.fromJson({
         'success': true,

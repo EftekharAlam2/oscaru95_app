@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:oscaru95/features/merchant/analytics/presentation/analytics.dart';
 import 'package:oscaru95/features/merchant/merchant_dash_board/presentation/merchant_desh_board_screen.dart';
 import 'package:oscaru95/features/merchant/merchant_profile/presentation/merchant_profile_screen.dart';
+import 'package:oscaru95/features/merchant/venue/presentation/venue_screen.dart';
 import 'package:oscaru95/gen/assets.gen.dart';
 import 'package:oscaru95/gen/colors.gen.dart';
 import 'package:oscaru95/networks/api_access.dart';
@@ -22,7 +23,7 @@ class _MarchentNavigationScreenState extends State<MarchentNavigationScreen> {
   int selectedIndex = 0;
   final List<Widget> _screens = const [
     MerchantDeshBoardScreen(),
-    AnalyticsScreen(),
+    VenueScreen(),
     MerchantProfileScreen(),
 
     // UserHomeScreen(),
@@ -95,29 +96,29 @@ class _MarchentNavigationScreenState extends State<MarchentNavigationScreen> {
               destinations: [
                 NavigationDestination(
                   icon: SvgPicture.asset(
-                    Assets.icons.chartSquare,
+                    Assets.icons.home,
                     color: const Color(0xFFB8B8B8),
                     width: 24.w,
                   ),
                   selectedIcon: SvgPicture.asset(
-                    Assets.icons.chartSquare,
+                    Assets.icons.home,
                     color: const Color(0xFFFF7A01),
                     width: 24.w,
                   ),
-                  label: "Dashboard",
+                  label: "Home",
                 ),
                 NavigationDestination(
                   icon: SvgPicture.asset(
-                    Assets.icons.research,
+                    Assets.icons.discover,
                     color: const Color(0xFFB8B8B8),
                     width: 24.w,
                   ),
                   selectedIcon: SvgPicture.asset(
-                    Assets.icons.research,
+                    Assets.icons.discover,
                     color: const Color(0xFFFF7A01),
                     width: 24.w,
                   ),
-                  label: "Analytics",
+                  label: "Venue",
                 ),
                 NavigationDestination(
                   icon: SvgPicture.asset(

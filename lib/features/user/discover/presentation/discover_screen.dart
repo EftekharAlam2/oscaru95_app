@@ -27,13 +27,19 @@ class DiscoverScreen extends StatefulWidget {
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
   int? favId;
-
   bool isFav = false;
+  final _searchCnt = TextEditingController();
+
   @override
   void initState() {
     disoverFilterRxObj.getFilter();
-
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _searchCnt.dispose();
+    super.dispose();
   }
 
   @override
@@ -72,6 +78,46 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ],
               ),
               UIHelper.verticalSpace(16.h),
+              // Search Field
+              TextField(
+                controller: _searchCnt,
+                onChanged: (value) {
+                  provider.setSearchQuery(value);
+                  disoverFilterRxObj.getFilter(searchQuery: value);
+                },
+                style: TextFontStyle.headline14w400CFFFFFFPoppins,
+                decoration: InputDecoration(
+                  hintText: "Search restaurants, bars...",
+                  hintStyle: TextFontStyle.headline14w400c6B6B6BPoppins,
+                  prefixIcon: Icon(CupertinoIcons.search, size: 18.sp, color: AppColors.c9C9C9C),
+                  suffixIcon: _searchCnt.text.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchCnt.clear();
+                            provider.clearSearch();
+                            disoverFilterRxObj.getFilter();
+                          },
+                          child: Icon(CupertinoIcons.clear, size: 18.sp, color: AppColors.c9C9C9C),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppColors.c282828,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: AppColors.c535353),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+                ),
+              ),
+              UIHelper.verticalSpace(16.h),
               StreamBuilder(
                 stream: disoverFilterRxObj.getFoodSpecialtream,
                 builder: (context, snapshot) {
@@ -101,11 +147,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                   favButton: () {},
                                   titile: data.venueName ?? "",
                                   location: data.address ?? "",
-                                  distance: '30 km',
-                                  ratting: "4.5 (12)",
+                                  distance: data.distance ?? "",
+                                  ratting: "${data.averageRating} (12)",
                                   day:
                                       "(${data.fromDay ?? "N/A"} to ${data.toDay ?? "N/A"} )",
-                                  time: "(7:00 AM - 8:00 PM)",
+                                  time: "",
                                   likeCount: provider.likeCount.toString(),
                                   commentCount: "${data.totalComment ?? ""}",
                                   firstViewProfileUrl:
@@ -229,13 +275,13 @@ class _DiscoverItemsState extends State<DiscoverItems> {
                       addFavouriteRx
                           .addToFavourite(id: widget.id)
                           .then((success) {
-                        discoverProvider.fav();
+                        discoverProvider.toggleItemFavorite(widget.id);
                       });
                     },
                     child: Container(
                       padding: EdgeInsets.all(8.sp),
                       decoration: BoxDecoration(
-                        color: discoverProvider.isFavorite
+                        color: discoverProvider.isItemFavorite(widget.id)
                             ? AppColors.cFFFFFF
                             : AppColors.allPrimaryColor,
                         shape: BoxShape.circle,
@@ -374,17 +420,21 @@ class _DiscoverItemsState extends State<DiscoverItems> {
                         children: [
                           GestureDetector(
                               onTap: () async {
-                                discoverProvider.toggleLike();
+                                discoverProvider.toggleItemLike(widget.id);
                                 await likePostRxObj
                                     .like(id: userId)
                                     .then((response) {
                                   getDiscoverRx.getDiscover();
                                 });
                               },
-                              child: SvgPicture.asset(Assets.icons.like)),
+                              child: SvgPicture.asset(
+                                discoverProvider.isItemLiked(widget.id)
+                                    ? Assets.icons.heartColord
+                                    : Assets.icons.like,
+                              )),
                           UIHelper.horizontalSpace(4.w),
                           Text(
-                            widget.likeCount,
+                            discoverProvider.getItemLikeCount(widget.id).toString(),
                             style: TextFontStyle.headline12w400C999999Poppins,
                           )
                         ],

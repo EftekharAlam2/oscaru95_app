@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oscaru95/common_widget/custom_button.dart';
@@ -92,13 +90,9 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                 textStaus: false,
                 onTap: () {
                   if (selectedIndex == 0) {
-                    log("message $selectedIndex");
                     NavigationService.navigateTo(Routes.loginScreen);
                   } else if (selectedIndex == 1) {
-                    //NavigationService.navigateTo(Routes.registrionVenu);
                     NavigationService.navigateTo(Routes.loginMerchantScreen);
-
-                    log("Selected role index: $selectedIndex");
                   }
                 },
                 btnName: "Continue",

@@ -59,6 +59,7 @@ class Datum {
     int? isItem;
     dynamic dealType;
     String? fromDay;
+    String? distance;
     String? toDay;
     String? fromTime;
     String? toTime;
@@ -81,6 +82,7 @@ class Datum {
         this.isItem,
         this.dealType,
         this.fromDay,
+        this.distance,
         this.toDay,
         this.fromTime,
         this.toTime,
@@ -104,6 +106,7 @@ class Datum {
         int? isItem,
         dynamic dealType,
         String? fromDay,
+        String? distance,
         String? toDay,
         String? fromTime,
         String? toTime,
@@ -126,6 +129,7 @@ class Datum {
             isItem: isItem ?? this.isItem,
             dealType: dealType ?? this.dealType,
             fromDay: fromDay ?? this.fromDay,
+            distance: distance ?? this.distance,
             toDay: toDay ?? this.toDay,
             fromTime: fromTime ?? this.fromTime,
             toTime: toTime ?? this.toTime,
@@ -153,6 +157,7 @@ class Datum {
         isItem: json["is_item"],
         dealType: json["deal_type"],
         fromDay: json["from_day"],
+        distance: json["distance"],
         toDay: json["to_day"],
         fromTime: json["from_time"],
         toTime: json["to_time"],
@@ -176,6 +181,7 @@ class Datum {
         "is_item": isItem,
         "deal_type": dealType,
         "from_day": fromDay,
+        "distance": distance,
         "to_day": toDay,
         "from_time": fromTime,
         "to_time": toTime,

@@ -1,6 +1,8 @@
 import 'dart:developer';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:oscaru95/common_widget/custom_button.dart';
@@ -16,6 +18,7 @@ import 'package:oscaru95/helpers/loading_helper.dart';
 import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
 import 'package:oscaru95/networks/api_access.dart';
+import 'package:oscaru95/provider/discover_provider.dart';
 import 'package:oscaru95/provider/filter_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -28,8 +31,6 @@ class FilterScreen extends StatefulWidget {
 
 class _FilterScreenState extends State<FilterScreen> {
   int _selectedIndex = -1;
-  int _typeIndex = -1;
-  int _typeCousin = -1;
   String? selectType;
 
   List<String> days = [
@@ -41,10 +42,33 @@ class _FilterScreenState extends State<FilterScreen> {
     "Friday",
     "Sat",
   ];
-  List<String> type = ["food", "drink"];
 
-  RangeValues _currentRangeValues = const RangeValues(40, 80);
-RangeValues _priceRangeValues = RangeValues(0, 100);
+  RangeValues _currentRangeValues = const RangeValues(0, 100);
+  RangeValues _priceRangeValues = RangeValues(0, 100);
+
+  List<String> availableTypes = [];
+  final Set<String> _selectedTypes = {}; // allow multiple selection if needed
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableTypesFromJson();
+  }
+
+  Future<void> _loadAvailableTypesFromJson() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/data/nearest_shops.json');
+      final dynamic jsonData = json.decode(jsonString);
+      List<dynamic> allShops = jsonData['data']['data'] as List? ?? [];
+      final types = allShops.map((e) => (e['type'] ?? '').toString()).where((t) => t.isNotEmpty).toSet().toList();
+      setState(() {
+        availableTypes = types;
+      });
+    } catch (e) {
+      log('Error reading nearest_shops.json: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final checkProvider = Provider.of<FilterProvider>(context);
@@ -56,101 +80,95 @@ RangeValues _priceRangeValues = RangeValues(0, 100);
         pressNav: () {
           NavigationService.goBack;
         },
-        pressClear: () {},
+        pressClear: () {
+          setState(() {
+            _selectedTypes.clear();
+            _selectedIndex = -1;
+            _currentRangeValues = const RangeValues(0, 100);
+            _priceRangeValues = const RangeValues(0, 100);
+          });
+        },
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
         child: Column(
           children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: checkProvider.filterItems.length,
-              itemBuilder: (context, index) {
-                var titile = checkProvider.filterItems[index];
-
-                return Theme(
-                  data: Theme.of(context).copyWith(
-                    dividerColor: Colors.transparent,
-                  ),
-                  child: ExpansionTile(
-                    iconColor: AppColors.cFFFFFF,
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: EdgeInsets.symmetric(vertical: 3.h),
-                    expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                    expandedAlignment: Alignment.centerLeft,
-                    title: Row(
-                      children: [
-                        SvgPicture.asset(Assets.icons.food),
-                        UIHelper.horizontalSpace(8.w),
-                        Text(
-                          titile.category,
-                          style: TextFontStyle.headline16w500c222222Poppins
-                              .copyWith(color: AppColors.cFFFFFF),
-                        ),
-                      ],
+            // Types Section (derived from nearest_shops.json)
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                iconColor: AppColors.cFFFFFF,
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.symmetric(vertical: 3.h),
+                expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                expandedAlignment: Alignment.centerLeft,
+                title: Row(
+                  children: [
+                    SvgPicture.asset(Assets.icons.food),
+                    UIHelper.horizontalSpace(8.w),
+                    Text(
+                      'Type',
+                      style: TextFontStyle.headline16w500c222222Poppins
+                          .copyWith(color: AppColors.cFFFFFF),
                     ),
-                    children: [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: titile.subcategories.length,
-                        itemBuilder: (context, subIndex) {
-                          var subcategory = titile.subcategories[subIndex];
-                          log("this is my filter:$subcategory");
-
-                          return Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  subcategory,
-                                  style: TextFontStyle
-                                      .headline16w500c222222Poppins
-                                      .copyWith(color: AppColors.c9C9C9C),
-                                ),
-                                SizedBox(
-                                  height: 24.h,
-                                  width: 24.w,
-                                  child: Consumer<FilterProvider>(
-                                    builder: (context, provider, child) {
-                                      return Checkbox(
-                                        checkColor: AppColors.c000000,
-                                        activeColor: AppColors.cFFFFFF,
-                                        focusColor: AppColors.cFFFFFF,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5.r),
-                                        ),
-                                        value: titile.selectedSubcategories
-                                            .contains(subcategory),
-                                        onChanged: (value) {
-                                          _typeIndex = subIndex;
-                                          _typeCousin = subIndex;
-                                          provider.toggleSubcategory(
-                                              titile.category, subcategory);
-                                          setState(() {
-                                            selectType = selectType =
-                                                checkProvider.filterItems[0]
-                                                    .subcategories[_typeIndex];
-                                          });
-                                          log("this is cusin type:$_typeCousin");
-                                        },
-                                      );
-                                    },
+                  ],
+                ),
+                children: [
+                  if (availableTypes.isEmpty)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      child: Text('Loading types...', style: TextFontStyle.headline14w400CFFFFFFPoppins),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: availableTypes.length,
+                      itemBuilder: (context, subIndex) {
+                        final subcategory = availableTypes[subIndex];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.h),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                subcategory,
+                                style: TextFontStyle.headline16w500c222222Poppins
+                                    .copyWith(color: AppColors.c9C9C9C),
+                              ),
+                              SizedBox(
+                                height: 24.h,
+                                width: 24.w,
+                                child: Checkbox(
+                                  checkColor: AppColors.c000000,
+                                  activeColor: AppColors.cFFFFFF,
+                                  focusColor: AppColors.cFFFFFF,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5.r),
                                   ),
+                                  value: _selectedTypes.contains(subcategory),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      if (value == true) {
+                                        _selectedTypes.add(subcategory);
+                                      } else {
+                                        _selectedTypes.remove(subcategory);
+                                      }
+                                      // For backward compatibility, set single selectType to first selected or null
+                                      selectType = _selectedTypes.isNotEmpty ? _selectedTypes.first : null;
+                                    });
+                                  },
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
+
             UIHelper.verticalSpace(24.h),
             const CustomDistanceAndPriceWidget(
               titile: "Distance",
@@ -213,7 +231,7 @@ RangeValues _priceRangeValues = RangeValues(0, 100);
                   },
                 )),
             UIHelper.verticalSpace(24.h),
-             CustomDistanceAndPriceWidget(
+            CustomDistanceAndPriceWidget(
               titile: "Price",
               desciption: "From £0 to ${_priceRangeValues.end.toInt()}",
             ),
@@ -251,12 +269,32 @@ RangeValues _priceRangeValues = RangeValues(0, 100);
   }
 
   void discoverFilter() async {
+    final provider = Provider.of<DiscoverProvider>(context, listen: false);
+
+    // Get selected type from filter (first checkbox selected in types)
+    String? selectedTypeForFilter;
+    if (selectType != null && selectType!.isNotEmpty) {
+      selectedTypeForFilter = selectType;
+    }
+
+    // Use distance slider values as min/max (in km)
+    final minDistance = _currentRangeValues.start.toInt().toString();
+    final maxDistance = _currentRangeValues.end.toInt().toString();
+
     await disoverFilterRxObj
-        .getFilter(type: selectType, days: days[_selectedIndex])
+        .getFilter(
+          type: selectedTypeForFilter,
+          days: _selectedIndex != -1 ? days[_selectedIndex] : null,
+          min: minDistance,
+          max: maxDistance,
+          searchQuery: provider.searchQuery,
+        )
         .waitingForSucess()
         .then((success) {
-      NavigationService.goBack;
+      NavigationService.goBack();
     });
-    log("this is days:${days[_selectedIndex]}");
+    log("this is days:${_selectedIndex != -1 ? days[_selectedIndex] : 'None selected'}");
+    log("this is selected type: $selectType");
+    log("distance filter: $minDistance - $maxDistance");
   }
 }

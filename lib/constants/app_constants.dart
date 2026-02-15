@@ -16,6 +16,7 @@ final class AppRegExpText {
 
 const String kKeyAccessToken = "kKeyAccessToken";
 const String kKeyRole = "kKeyRole";
+const String kKeyAccountType = "kKeyAccountType"; // "user" or "business"
 const String kKeyUserFirstName = "kKeyUserFirstName";
 const String kKeyUserLastName = "kKeyUserLastName";
 const String kKeyIsLoggedIn = "kKeyIsLoggedIn";

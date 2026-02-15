@@ -1,12 +1,13 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oscaru95/common_widget/custom_button.dart';
 import 'package:oscaru95/common_widget/custom_form_field.dart';
+import 'package:oscaru95/constants/app_constants.dart';
 import 'package:oscaru95/constants/text_font_style.dart';
 import 'package:oscaru95/gen/assets.gen.dart';
 import 'package:oscaru95/gen/colors.gen.dart';
 import 'package:oscaru95/helpers/all_routes.dart';
+import 'package:oscaru95/helpers/di.dart';
 import 'package:oscaru95/helpers/loading_helper.dart';
 import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
@@ -72,7 +73,7 @@ class _LoginMerchantScreenState extends State<LoginMerchantScreen> {
                   }
 
                   final emailRegex =
-                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(value)) {
                     return 'Please enter a valid email address';
                   }
@@ -149,13 +150,6 @@ class _LoginMerchantScreenState extends State<LoginMerchantScreen> {
               CustomButton(
                 textStaus: false,
                 onTap: () {
-                  // NavigationService.navigateToWithArgs(
-                  //     Routes.drinkScreen, {"status": true});
-                  // NavigationService.navigateToReplacement(Routes.drinkScreen);
-                  // if (role == "Marchent") {
-                  //   NavigationService.navigateToReplacement(
-                  //       Routes.merchantNavigation);
-                  // }
                   if (_formKey.currentState!.validate()) {
                     userLoginRX
                         .userLogin(
@@ -164,56 +158,21 @@ class _LoginMerchantScreenState extends State<LoginMerchantScreen> {
                         .waitingForSucess()
                         .then((success) {
                       if (success) {
-                        if (userLoginRX.role == "business") {
-                          NavigationService.navigateToReplacement(
-                              Routes.merchantNavigation);
-                        } else {
-                          NavigationService.navigateToReplacement(
-                              Routes.userNavigationScreen);
-                        }
+                        // Store account type as "business"
+                        appData.write(kKeyAccountType, "business");
+                        NavigationService.navigateToReplacement(
+                            Routes.merchantNavigation);
                       }
                     });
                   }
                 },
                 btnName: "Login",
               ),
-              UIHelper.verticalSpace(24.h),
-              //forget password
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    NavigationService.navigateTo(Routes.forgetPaswordRoute);
-                  },
-                  child: Text(
-                    'Forgot Password?',
-                    style: TextFontStyle.headline12w400C999999Poppins
-                        .copyWith(color: AppColors.cFE5401),
-                  ),
-                ),
-              ),
-              UIHelper.verticalSpace(50.h),
 
-              Center(
-                child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                        text: "Don't have an account? ",
-                        style: TextFontStyle.headline14w400c666666Poppins,
-                        children: [
-                          TextSpan(
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                NavigationService.navigateTo(
-                                    Routes.registrionVenu);
-                              },
-                            text: " Sign Up",
-                            style: TextFontStyle.headline14w400c666666Poppins
-                                .copyWith(
-                              color: AppColors.cFF7A01,
-                            ),
-                          )
-                        ])),
-              )
+              // For business (merchant) login we intentionally do not show
+              // 'Forgot Password?' or 'Sign Up' links. Keep spacing consistent.
+              UIHelper.verticalSpace(24.h),
+
             ],
           ),
         ),

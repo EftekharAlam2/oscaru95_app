@@ -5,10 +5,12 @@ import 'package:oscaru95/common_widget/custom_button.dart';
 import 'package:oscaru95/common_widget/custom_divider_widget.dart';
 import 'package:oscaru95/common_widget/custom_form_field.dart';
 import 'package:oscaru95/common_widget/social_button_widget.dart';
+import 'package:oscaru95/constants/app_constants.dart';
 import 'package:oscaru95/constants/text_font_style.dart';
 import 'package:oscaru95/gen/assets.gen.dart';
 import 'package:oscaru95/gen/colors.gen.dart';
 import 'package:oscaru95/helpers/all_routes.dart';
+import 'package:oscaru95/helpers/di.dart';
 import 'package:oscaru95/helpers/loading_helper.dart';
 import 'package:oscaru95/helpers/navigation_service.dart';
 import 'package:oscaru95/helpers/ui_helpers.dart';
@@ -164,21 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         .waitingForSucess()
                         .then((success) {
                       if (success) {
-                        if (userLoginRX.role == "business") {
-                          NavigationService.navigateTo(
-                              Routes.merchantNavigation);
-                        } else {
-                          NavigationService.navigateToReplacement(
-                              Routes.userNavigationScreen);
-                        }
+                        // Store account type as "user"
+                        appData.write(kKeyAccountType, "user");
+                        NavigationService.navigateToReplacement(
+                            Routes.userNavigationScreen);
                       }
                     });
                   }
-
-                  // if (role == "Marchent") {
-                  //   NavigationService.navigateToReplacement(
-                  //       Routes.merchantNavigation);
-                  // }
                 },
                 btnName: "Login",
               ),
@@ -201,29 +195,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Custom divider
               const CustomDividerWidget(),
-              UIHelper.verticalSpace(24.h),
-              //social button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // SocialButtonWidget(
-                  //   onTap: () {},
-                  //   icon: Assets.icons.facebook,
-                  // ),
-                  SocialButtonWidget(
-                    onTap: () {},
-                    icon: Assets.icons.google,
-                  ),
-                  // SocialButtonWidget(
-                  //   onTap: () {},
-                  //   icon: Assets.icons.twttir,
-                  // ),
-                  SocialButtonWidget(
-                    onTap: () {},
-                    icon: Assets.icons.apple,
-                  ),
-                ],
-              ),
+              // UIHelper.verticalSpace(24.h),
+              // //social button
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     // SocialButtonWidget(
+              //     //   onTap: () {},
+              //     //   icon: Assets.icons.facebook,
+              //     // ),
+              //     SocialButtonWidget(
+              //       onTap: () {},
+              //       icon: Assets.icons.google,
+              //     ),
+              //     // SocialButtonWidget(
+              //     //   onTap: () {},
+              //     //   icon: Assets.icons.twttir,
+              //     // ),
+              //     SocialButtonWidget(
+              //       onTap: () {},
+              //       icon: Assets.icons.apple,
+              //     ),
+              //   ],
+              // ),
               UIHelper.verticalSpace(32.h),
               Center(
                 child: RichText(

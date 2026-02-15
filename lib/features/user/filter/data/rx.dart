@@ -19,16 +19,23 @@ final class DisoverFilterRx extends RxResponseInt<DiscoverResponse> {
   ValueStream get getFoodSpecialtream => dataFetcher.stream;
   final api = DiscoverFilterAPi.instance;
 
-  Future<DiscoverResponse> getFilter({String? type, String? cusingId,String? cuisinId,String? days,String?min,String ?max}) async {
+  Future<DiscoverResponse> getFilter({
+    String? type,
+    String? cusingId,
+    String? cuisinId,
+    String? days,
+    String? min,
+    String? max,
+    String? searchQuery
+  }) async {
     try {
       DiscoverResponse data = await api.filter(
         type: type,
         cusingId: cusingId,
         days: days,
         max: max,
-        min: min
-
-        
+        min: min,
+        searchQuery: searchQuery
       );
       handleSuccessWithReturn(data);
 
@@ -51,7 +58,6 @@ final class DisoverFilterRx extends RxResponseInt<DiscoverResponse> {
     }
     log(error.toString());
     dataFetcher.sink.addError(error);
-    // throw error;
     return false;
   }
 }

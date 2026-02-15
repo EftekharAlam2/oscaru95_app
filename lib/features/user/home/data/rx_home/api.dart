@@ -20,7 +20,7 @@ final class GetNearestApi {
       final String jsonString =
           await rootBundle.loadString('assets/data/nearest_shops.json');
       final dynamic jsonData = json.decode(jsonString);
-      
+
       // Parse the JSON to NearestShopResponse
       final data = NearestShopResponse.fromJson(jsonData);
       return data;

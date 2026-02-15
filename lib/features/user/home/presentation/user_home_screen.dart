@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
@@ -57,9 +58,11 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     });
     _loadCustomMarkers();
     // Start getting location immediately
-    _getCurrentLocation(); 
+    _getCurrentLocation();
     getNearestRx.getNearest();
     _fetchNearestShops();
+    // Load JSON data for map markers
+    _loadNearestShopsFromJson();
   }
 
   @override
@@ -191,71 +194,75 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     }
   }
 
+  /// Load nearest shops from local JSON file for map markers
+  Future<void> _loadNearestShopsFromJson() async {
+    try {
+      final jsonString = await DefaultAssetBundle.of(context)
+          .loadString('assets/data/nearest_shops.json');
+      final jsonResponse = jsonDecode(jsonString);
+      final response = NearestShopResponse.fromJson(jsonResponse);
+
+      if (mounted && response.data != null && response.data!.data.isNotEmpty) {
+        _createMarkersFromJson(response);
+      }
+    } catch (error) {
+      debugPrint("Error loading shops from JSON: $error");
+    }
+  }
+
+  /// Create markers from JSON data only
+  void _createMarkersFromJson(NearestShopResponse response) {
+    Set<Marker> markers = {};
+
+    final defaultMarker = _resturent ?? BitmapDescriptor.defaultMarker;
+
+    for (var shop in response.data!.data!) {
+      if (shop.latitude != null && shop.longitude != null) {
+        final lat = double.tryParse(shop.latitude!);
+        final lng = double.tryParse(shop.longitude!);
+
+        if (lat != null && lng != null) {
+          BitmapDescriptor icon;
+
+          if (shop.type == 'Restaurant' && _bar != null) {
+            icon = _bar!;
+          } else if (shop.type == 'Bar' && _resturent != null) {
+            icon = _resturent!;
+          } else {
+            icon = defaultMarker;
+          }
+
+          markers.add(
+            Marker(
+              markerId: MarkerId(shop.id.toString()),
+              position: LatLng(lat, lng),
+              icon: icon,
+              infoWindow: InfoWindow(
+                title: shop.venueName,
+                snippet: shop.address,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldColor,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(170.h),
+        preferredSize: Size.fromHeight(60.h),
         child: Consumer<UserHomeProvider>(
           builder: (context, provider, child) {
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          NavigationService.navigateTo(
-                              Routes.changeMyLocationScreen);
-                        },
-                        child: Row(
-                          children: [
-                            SvgPicture.asset(Assets.icons.location),
-                            UIHelper.horizontalSpace(4.w),
-                            Text('Barcelona, Spain',
-                                style: TextFontStyle
-                                    .headline16w400CFFFFFFPoppins),
-                            UIHelper.horizontalSpace(4.w),
-                            SvgPicture.asset(Assets.icons.arrowDropDown),
-                          ],
-                        ),
-                      ),
-                      Badge(
-                        label: Text(
-                          "4",
-                          style: TextFontStyle.headline12w400c6B6B6BPoppins
-                              .copyWith(color: AppColors.cFFFFFF),
-                        ),
-                        child: GestureDetector(
-                          onTap: () {
-                            NavigationService.navigateTo(
-                                Routes.notificationScreen);
-                          },
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.c282828,
-                            ),
-                            padding: EdgeInsets.all(8.sp),
-                            child:
-                                SvgPicture.asset(Assets.icons.notificationBing),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  UIHelper.verticalSpaceSmall,
-                  HomeSearchWidget(searchCnt: _searchCnt),
-                  UIHelper.verticalSpaceSmall,
-                  ViewTypeSelectorWidget(provider: provider),
-                  UIHelper.verticalSpace(16.h),
-                ],
-              ),
-            );
+            return ViewTypeSelectorWidget(provider: provider);
           },
         ),
       ),
@@ -266,7 +273,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasData) {
             NearestShopResponse response = snapshot.data!;
-            
+
             // Logic to determine the map's initial center point (First shop location)
             LatLng? initialTarget;
             if (response.data?.data?.isNotEmpty == true) {
@@ -288,13 +295,13 @@ class _UserHomeScreenState extends State<UserHomeScreen>
             return Consumer<UserHomeProvider>(
               builder: (context, provider, child) {
                 return provider.selectedIndex == 1
-                    ? (initialTarget == null 
+                    ? (initialTarget == null
                         ? const Center(child: CircularProgressIndicator())
                         : GoogleMap(
                             initialCameraPosition: CameraPosition(
                               // Use the calculated initialTarget (the first shop)
-                              target: initialTarget!, 
-                              zoom: 10, 
+                              target: initialTarget!,
+                              zoom: 10,
                             ),
                             myLocationEnabled: true,
                             markers: _markers,
@@ -338,7 +345,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                               totalReview: model.totalReview.toString(),
                               resturentType: model.type,
                               name: model.venueName,
-                              
+
                               onFavTap: () {
                                 // Call API to add to favorites
                                 addFavouriteRx.addToFavourite(id: model.id.toString());
@@ -397,30 +404,30 @@ class ViewTypeSelectorWidget extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => provider.tabIndex(2),
-              child: Container(
-                alignment: Alignment.center,
-                height: double.maxFinite,
-                decoration: BoxDecoration(
-                  color: provider.selectedIndex == 2
-                      ? AppColors.cFE5401
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Text(
-                  "List",
-                  style: provider.selectedIndex == 2
-                      ? TextFontStyle.headline16w700c222222Poppins
-                          .copyWith(color: AppColors.cFFFFFF)
-                      : TextFontStyle.headline16w400CFFFFFFPoppins
-                          .copyWith(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
+          // Expanded(
+          //   child: GestureDetector(
+          //     onTap: () => provider.tabIndex(2),
+          //     child: Container(
+          //       alignment: Alignment.center,
+          //       height: double.maxFinite,
+          //       decoration: BoxDecoration(
+          //         color: provider.selectedIndex == 2
+          //             ? AppColors.cFE5401
+          //             : Colors.transparent,
+          //         borderRadius: BorderRadius.circular(8.r),
+          //       ),
+          //       child: Text(
+          //         "List",
+          //         style: provider.selectedIndex == 2
+          //             ? TextFontStyle.headline16w700c222222Poppins
+          //                 .copyWith(color: AppColors.cFFFFFF)
+          //             : TextFontStyle.headline16w400CFFFFFFPoppins
+          //                 .copyWith(color: Colors.grey),
+          //         textAlign: TextAlign.center,
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

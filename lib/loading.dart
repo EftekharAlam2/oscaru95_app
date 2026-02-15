@@ -1,6 +1,5 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:oscaru95/constants/app_constants.dart';
 import 'package:oscaru95/constants/app_constants.dart';
 import 'package:oscaru95/features/auth/presentation/role/presentation/role_select_screen.dart';
 import 'package:oscaru95/features/merchant/navigaion_screen.dart';
@@ -31,7 +30,6 @@ class _LoadingState extends State<Loading> {
     bool data = appData.read(kKeyIsLoggedIn) ?? false;
     if (data) {
       String token = appData.read(kKeyAccessToken);
-      log("Token is ===========> $token");
       DioSingleton.instance.update(token);
     }
 
@@ -47,10 +45,10 @@ class _LoadingState extends State<Loading> {
     }
 
     final bool isLoggedIn = appData.read(kKeyIsLoggedIn) ?? false;
-    final String? role = appData.read(kKeyRole);
+    final String? accountType = appData.read(kKeyAccountType);
 
     if (isLoggedIn) {
-      if (role == 'user') {
+      if (accountType == 'user') {
         return const UserNavigationScreen();
       } else {
         return const MarchentNavigationScreen();
