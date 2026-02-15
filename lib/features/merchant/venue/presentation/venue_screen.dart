@@ -109,6 +109,11 @@ class _VenueScreenState extends State<VenueScreen> {
     final existingLat = existingVenue?['latitude']?.toString() ?? '';
     final existingLng = existingVenue?['longitude']?.toString() ?? '';
     
+    // Ensure the current type is in the list, if not add it
+    if (!venueTypes.contains(type)) {
+      venueTypes.add(type);
+    }
+    
     final nameController = TextEditingController(text: venueName);
     final locationController = TextEditingController(text: location);
     final latitudeController = TextEditingController(text: existingLat);
@@ -1054,56 +1059,6 @@ class _VenueScreenState extends State<VenueScreen> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'Distance (km) *',
-                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
-                  filled: true,
-                  fillColor: AppColors.c282828,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: AppColors.c535353),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: AppColors.c535353),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
-                  ),
-                ),
-              ),
-              UIHelper.verticalSpace(12.h),
-              // Latitude
-              TextField(
-                controller: latitudeController,
-                style: TextFontStyle.headline14w400CFFFFFFPoppins,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Latitude *',
-                  labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
-                  filled: true,
-                  fillColor: AppColors.c282828,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: AppColors.c535353),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: AppColors.c535353),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: const BorderSide(color: Color(0xFFFE5401)),
-                  ),
-                ),
-              ),
-              UIHelper.verticalSpace(12.h),
-              // Longitude
-              TextField(
-                controller: longitudeController,
-                style: TextFontStyle.headline14w400CFFFFFFPoppins,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Longitude *',
                   labelStyle: TextFontStyle.headline12w400c6B6B6BPoppins,
                   filled: true,
                   fillColor: AppColors.c282828,
