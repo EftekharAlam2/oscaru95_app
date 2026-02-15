@@ -1177,8 +1177,9 @@ class _VenueScreenState extends State<VenueScreen> {
       ),
       ),
     );
+  }
 
-  /// Save added venue
+  /// Save added venue  /// Save added venue
   Future<void> _saveAddedVenue(
     String name,
     String type,
